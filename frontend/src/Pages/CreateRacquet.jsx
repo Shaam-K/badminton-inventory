@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_URL;
 const CreateRacquet = () => {
     const navigate = useNavigate();
-    
+
     // populate form
 
     const [fillBrands, setFillBrands] = useState([]);
@@ -25,42 +25,21 @@ const CreateRacquet = () => {
 
     const [imagePreview, setImagePreview] = useState(null);
 
+    const [loadingBrands, setLoadingBrands] = useState(true);
+    const [isSubmit, setIsSubmit] = useState(false);
+
     // fetching
 
     const fetchBrands = async () => {
         try {
+            setLoadingBrands(true)
             const response = await axios.get(`${API_URL}/brands`);
             setFillBrands(response.data.data);
         } catch (err) {
             console.log(err);
 
-        }
-    }
-
-    const fetchBalancePoints = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/racquets/balance`);
-            setFillBPoints(response.data.data);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    const fetchWeights = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/racquets/weights`);
-            setFillWeights(response.data.data);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    const fetchGrips = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/racquets/grips`);
-            setFillGrips(response.data.data);
-        } catch (err) {
-            console.log(err);
+        } finally {
+            setLoadingBrands(false);
         }
     }
 
@@ -82,6 +61,7 @@ const CreateRacquet = () => {
         e.preventDefault();
 
         try {
+            setIsSubmit(true);
             const formData = new FormData();
 
             // Append text fields
@@ -109,6 +89,8 @@ const CreateRacquet = () => {
 
         } catch (err) {
             console.error("Upload failed", err);
+        } finally {
+            setIsSubmit(false)
         }
     };
 
@@ -116,9 +98,6 @@ const CreateRacquet = () => {
 
     useEffect(() => {
         fetchBrands();
-        fetchBalancePoints();
-        fetchWeights();
-        fetchGrips();
     }, [])
 
     // testing
@@ -130,7 +109,7 @@ const CreateRacquet = () => {
     return (
         <section className="flex flex-col justify-center items-center mt-5">
             <h1 className="text-xl font-semibold underline">CREATE RACQUET</h1>
-            <form onSubmit={HandleSubmit} method="post" encType="multipart/form-data" className="flex flex-col items-left xl:w-[40%] md:w-[60%] w-[90%]">
+            <form method="post" encType="multipart/form-data" className="flex flex-col items-left xl:w-[40%] md:w-[60%] w-[90%]">
 
                 <div className="flex flex-col items-center my-3 border-5 border-blue-200 bg-blue-100 p-15 rounded-md">
                     <h1 className="my-3 font-semibold text-lg text-blue-700">Upload Image</h1>
@@ -158,7 +137,12 @@ const CreateRacquet = () => {
                 <div className="flex flex-col my-3">
                     <label htmlFor="brand_id" className="my-1 font-semibold text-lg">Brand</label>
                     <select id="brand_id" name="brand_id" className="bg-blue-100 border-2 border-blue-500 p-1" onChange={(e) => setBrand(e.target.value)}>
-                        <option value="">-- Select Brand --</option>
+                        <option value="">{loadingBrands ?
+                        ("loading")
+                            :
+                            ("-- Select Brand --")
+                        }
+                        </option>
                         {fillBrands.map((brand, ind) => {
                             return (
                                 <option key={ind} value={brand.id}>{brand.name}</option>
@@ -182,28 +166,28 @@ const CreateRacquet = () => {
                         <h1 className="my-1 font-semibold text-lg">Weights</h1>
                         <div className="grid grid-cols-2 gap-3 my-3">
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="U" name="weight" value="U" onChange={() => HandleOnChange("U", setWeights)} />
-                                    <label htmlFor="U" >U</label>
+                                <input type="checkbox" id="U" name="weight" value="U" onChange={() => HandleOnChange("U", setWeights)} />
+                                <label htmlFor="U" >U</label>
                             </div>
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="2U" name="weight" value="2U" onChange={() => HandleOnChange("2U", setWeights)} />
-                                    <label htmlFor="2U" >2U</label>
+                                <input type="checkbox" id="2U" name="weight" value="2U" onChange={() => HandleOnChange("2U", setWeights)} />
+                                <label htmlFor="2U" >2U</label>
                             </div>
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="3U" name="weight" value="3U" onChange={() => HandleOnChange("3U", setWeights)} />
-                                    <label htmlFor="3U" >3U</label>
+                                <input type="checkbox" id="3U" name="weight" value="3U" onChange={() => HandleOnChange("3U", setWeights)} />
+                                <label htmlFor="3U" >3U</label>
                             </div>
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="4U" name="weight" value="4U" onChange={() => HandleOnChange("4U", setWeights)} />
-                                    <label htmlFor="4U" >4U</label>
+                                <input type="checkbox" id="4U" name="weight" value="4U" onChange={() => HandleOnChange("4U", setWeights)} />
+                                <label htmlFor="4U" >4U</label>
                             </div>
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="5U" name="weight" value="5U" onChange={() => HandleOnChange("5U", setWeights)} />
-                                    <label htmlFor="5U" >5U</label>
+                                <input type="checkbox" id="5U" name="weight" value="5U" onChange={() => HandleOnChange("5U", setWeights)} />
+                                <label htmlFor="5U" >5U</label>
                             </div>
                             <div className='flex gap-3'>
-                                    <input type="checkbox" id="F" name="weight" value="F" onChange={() => HandleOnChange("F", setWeights)} />
-                                    <label htmlFor="F" >F</label>
+                                <input type="checkbox" id="F" name="weight" value="F" onChange={() => HandleOnChange("F", setWeights)} />
+                                <label htmlFor="F" >F</label>
                             </div>
                         </div>
                     </div>
@@ -248,7 +232,11 @@ const CreateRacquet = () => {
                     </div>
                 </div>
 
-                <input type="submit" value="Create Racquet" className="my-3 bg-blue-300 p-3 hover:bg-blue-500 hover:text-white cursor-pointer transition-all" />
+                <button onClick={HandleSubmit} disabled={isSubmit} className="my-3 bg-blue-300 p-3 hover:bg-blue-500 hover:text-white cursor-pointer transition-all">{isSubmit ? (
+                    <div className="flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".14" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".29" transform="rotate(30 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".43" transform="rotate(60 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".57" transform="rotate(90 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".71" transform="rotate(120 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".86" transform="rotate(150 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" transform="rotate(180 12 12)" /><animateTransform attributeName="transform" calcMode="discrete" dur="0.75s" repeatCount="indefinite" type="rotate" values="0 12 12;30 12 12;60 12 12;90 12 12;120 12 12;150 12 12;180 12 12;210 12 12;240 12 12;270 12 12;300 12 12;330 12 12;360 12 12" /></g></svg>
+                    </div>
+                ) : 'Create Racquet'}</button>
 
             </form>
         </section>

@@ -7,12 +7,13 @@ import ViewRacquets from '../components/ViewRacquets'
 const Home = () => {
   // filling forms
   const [fillBrands, setFillBrands] = useState([]);
-  const [fillWeights, setFillWeights] = useState([]);
-  const [fillGrips, setFillGrips] = useState([]);
-  const [fillBalances, setFillBalances] = useState([]);
   const [racquetsData, setRacquetsData] = useState([]);
 
+  const [toggleMenu, setToggleMenu] = useState(false);
+
   const [filterSwitch, SetFilterSwitch] = useState(false);
+  const [loadingContent, setLoadingContent] = useState(true);
+  const [loadingBrands, setLoadingBrands] = useState(true);
 
   // keeping track of selections
 
@@ -20,6 +21,10 @@ const Home = () => {
   const [selectedWeights, setSelectedWeights] = useState([]);
   const [selectedGrips, setSelectedGrips] = useState([]);
   const [selectedBalances, setSelectedBalances] = useState([]);
+
+  // apply loader
+
+  const [filterLoading, setFilterLoading] = useState(false);
 
   const updateSelection = (value, selected_array, set_selected_array, key) => {
     let updated;
@@ -38,42 +43,15 @@ const Home = () => {
 
   const fetchBrands = async () => {
     try {
+      setLoadingBrands(true)
       const response = await axios.get(`${API_URL}/brands`);
       setFillBrands(response.data.data);
     } catch (error) {
       console.error('Error fetching brands:', error);
+    } finally {
+      setLoadingBrands(false)
     }
   };
-
-  const fetchWeights = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/racquets/weights`);
-      const weights = response.data.data;
-      setFillWeights(weights);
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  const fetchGrips = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/racquets/grips`);
-      const grips = response.data.data;
-      setFillGrips(grips);
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  const fetchBalancePoints = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/racquets/balance`);
-      const balances = response.data.data;
-      setFillBalances(balances);
-    } catch (err) {
-      console.log(err);
-    }
-  }
 
   const GetAllRacquets = async () => {
     const response = await axios.get(`${API_URL}/racquets/`)
@@ -93,9 +71,23 @@ const Home = () => {
 
   const OPFilter = async () => {
     if (selectedBrands.length == 0 && selectedWeights.length == 0 && selectedGrips.length == 0 && selectedBalances == 0) {
-      await GetAllRacquets();
+      try {
+        await GetAllRacquets();
+        setLoadingContent(true);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoadingContent(false);
+      }
     } else {
-      await GetFilteredRacquets();
+      try {
+        await GetFilteredRacquets();
+        setLoadingContent(true);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoadingContent(false);
+      }
     }
   }
 
@@ -128,41 +120,61 @@ const Home = () => {
     setSelectedBalances(storedBalances)
 
     fetchBrands();
-    fetchWeights();
-    fetchGrips();
-    fetchBalancePoints();
     SetFilterSwitch(true);
     OPFilter();
   }, []);
 
   const submitFilter = async (e) => {
     e.preventDefault();
-    await OPFilter();
-    SetFilterSwitch(false)
+
+    try {
+      setFilterLoading(true)
+      await OPFilter();
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setFilterLoading(false)
+      SetFilterSwitch(false)
+      setToggleMenu(false);
+    }
   }
 
   return (
-    <section className='grid grid-cols-[20vw_auto] h-screen gap-3'>
-      <form onSubmit={submitFilter} className='flex flex-col gap-10 border-r-1 border-b-1 h-min'>
+    <section className='grid md:grid-cols-[20vw_auto] h-screen gap-3'>
+      <button onClick={() => {setToggleMenu((prev) => !prev)}} className='cursor-pointer md:hidden block max-h-sm w-full p-3 bg-blue-400 text-white'>{toggleMenu ? "Close Filters" : "Open Filters"}</button>
+      <form className={`${toggleMenu ? 'flex' : 'hidden'} md:flex h-min flex flex-col gap-4 border-r-1 border-b-1`}>
         <div className='p-3'>
-          <h1 className='text-xl cursor-pointer' onClick={ResetFilter}>Reset Filters</h1>
+          <div className='flex gap-6 items-center'>
+            <h1 className='text-xl text-blue-600 cursor-pointer' onClick={ResetFilter}>Reset Filters</h1>
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.25em" height="1.25em" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20q-3.35 0-5.675-2.325T4 12t2.325-5.675T12 4q1.725 0 3.3.712T18 6.75V4h2v7h-7V9h4.2q-.8-1.4-2.187-2.2T12 6Q9.5 6 7.75 7.75T6 12t1.75 4.25T12 18q1.925 0 3.475-1.1T17.65 14h2.1q-.7 2.65-2.85 4.325T12 20" /></svg>
+          </div>
+
           <div className='border-b-1 my-3'></div>
           <div className="md:flex block items-center gap-3 mb-1">
             <h1 className='text-lg font-semibold'>Brands</h1>
             <Link to="/brands" className='text-md cursor-pointer underline'>Edit</Link>
           </div>
-          {fillBrands.map((brand, ind) => {
-            return (
-              <div className='flex gap-3' key={ind}>
-                <input type="checkbox" id={`brand_${ind}`} name="brand" value={brand.id} checked={selectedBrands.includes(brand.id)} onChange={() => updateSelection(brand.id, selectedBrands, setSelectedBrands, "selectedBrands")} />
-                <label htmlFor={`brand_${ind}`}>{brand.name}</label>
-              </div>
-            )
+          {loadingBrands ? (
+            <div className="flex items-center justify-left">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".14" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".29" transform="rotate(30 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".43" transform="rotate(60 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".57" transform="rotate(90 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".71" transform="rotate(120 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".86" transform="rotate(150 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" transform="rotate(180 12 12)" /><animateTransform attributeName="transform" calcMode="discrete" dur="0.75s" repeatCount="indefinite" type="rotate" values="0 12 12;30 12 12;60 12 12;90 12 12;120 12 12;150 12 12;180 12 12;210 12 12;240 12 12;270 12 12;300 12 12;330 12 12;360 12 12" /></g></svg>
+            </div>
+          )
+            :
+            (
+              (fillBrands.map((brand, ind) => {
+                return (
+                  <div className='flex gap-3' key={ind}>
+                    <input type="checkbox" id={`brand_${ind}`} name="brand" value={brand.id} checked={selectedBrands.includes(brand.id)} onChange={() => updateSelection(brand.id, selectedBrands, setSelectedBrands, "selectedBrands")} />
+                    <label htmlFor={`brand_${ind}`}>{brand.name}</label>
+                  </div>
+                )
 
-          })}
+              }))
+            )
+          }
         </div>
 
-        <span className='border-b-1'></span>
+        <div className='border-b-1'></div>
 
         <div className='p-3'>
           <h1 className='text-lg font-semibold mb-1'>Weights</h1>
@@ -195,7 +207,7 @@ const Home = () => {
           </div>
         </div>
 
-        <span className='border-b-1'></span>
+        <div className='border-b-1'></div>
 
         <div className='p-3'>
           <h1 className='text-lg font-semibold mb-1'>Grips</h1>
@@ -232,7 +244,7 @@ const Home = () => {
           </div>
         </div>
 
-        <span className='border-b-1'></span>
+        <div className='border-b-1'></div>
 
         <div className='p-3'>
           <h1 className='text-lg font-semibold mb-1'>Balance Point</h1>
@@ -254,11 +266,15 @@ const Home = () => {
 
 
 
-        {filterSwitch && <input className='text-center p-2 bg-blue-700 hover:bg-blue-500 cursor-pointer text-white' type="submit" value="Apply" />}
-
+        {filterSwitch && <button onClick={submitFilter} disabled={filterLoading} className="w-full bg-blue-400 p-3 hover:bg-blue-500 hover:text-white cursor-pointer transition-all">{filterLoading ? (
+          <div className="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".14" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".29" transform="rotate(30 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".43" transform="rotate(60 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".57" transform="rotate(90 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".71" transform="rotate(120 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" opacity=".86" transform="rotate(150 12 12)" /><rect width="2" height="5" x="11" y="1" fill="currentColor" transform="rotate(180 12 12)" /><animateTransform attributeName="transform" calcMode="discrete" dur="0.75s" repeatCount="indefinite" type="rotate" values="0 12 12;30 12 12;60 12 12;90 12 12;120 12 12;150 12 12;180 12 12;210 12 12;240 12 12;270 12 12;300 12 12;330 12 12;360 12 12" /></g></svg>
+          </div>
+        ) : 'Apply'}</button>
+        }
       </form>
 
-      <ViewRacquets filtered_racquets={racquetsData} />
+      <ViewRacquets filtered_racquets={racquetsData} loading={loadingContent} />
 
 
     </section>
